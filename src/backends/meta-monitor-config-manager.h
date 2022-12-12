@@ -34,6 +34,7 @@ typedef struct _MetaMonitorConfig
   MetaMonitorSpec *monitor_spec;
   MetaMonitorModeSpec *mode_spec;
   gboolean enable_underscanning;
+  gboolean allow_vrr;
   gboolean has_max_bpc;
   unsigned int max_bpc;
 } MetaMonitorConfig;

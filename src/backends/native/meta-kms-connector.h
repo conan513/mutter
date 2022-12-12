@@ -61,6 +61,7 @@ typedef struct _MetaKmsConnectorState
   MetaMonitorTransform panel_orientation_transform;
 
   MetaKmsRange max_bpc;
+  gboolean vrr_capable;
 } MetaKmsConnectorState;
 
 META_EXPORT_TEST

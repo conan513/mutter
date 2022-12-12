@@ -167,6 +167,7 @@ typedef enum
   STATE_MONITOR_MODE_RATE,
   STATE_MONITOR_MODE_FLAG,
   STATE_MONITOR_UNDERSCANNING,
+  STATE_MONITOR_VRR_ALLOWED,
   STATE_MONITOR_MAXBPC,
   STATE_DISABLED,
   STATE_POLICY,
@@ -452,6 +453,10 @@ handle_start_element (GMarkupParseContext  *context,
           {
             parser->state = STATE_MONITOR_UNDERSCANNING;
           }
+        else if (g_str_equal (element_name, "vrr-allowed"))
+          {
+            parser->state = STATE_MONITOR_VRR_ALLOWED;
+          }
         else if (g_str_equal (element_name, "maxbpc"))
           {
             parser->state = STATE_MONITOR_MAXBPC;
@@ -546,6 +551,13 @@ handle_start_element (GMarkupParseContext  *context,
       {
         g_set_error (error, G_MARKUP_ERROR, G_MARKUP_ERROR_UNKNOWN_ELEMENT,
                      "Invalid element '%s' under underscanning", element_name);
+        return;
+      }
+
+    case STATE_MONITOR_VRR_ALLOWED:
+      {
+        g_set_error (error, G_MARKUP_ERROR, G_MARKUP_ERROR_UNKNOWN_ELEMENT,
+                     "Invalid element '%s' under vrr-allowed", element_name);
         return;
       }
 
@@ -825,6 +837,14 @@ handle_end_element (GMarkupParseContext  *context,
     case STATE_MONITOR_UNDERSCANNING:
       {
         g_assert (g_str_equal (element_name, "underscanning"));
+
+        parser->state = STATE_MONITOR;
+        return;
+      }
+
+    case STATE_MONITOR_VRR_ALLOWED:
+      {
+        g_assert (g_str_equal (element_name, "vrr-allowed"));
 
         parser->state = STATE_MONITOR;
         return;
@@ -1329,6 +1349,14 @@ handle_text (GMarkupParseContext *context,
         return;
       }
 
+    case STATE_MONITOR_VRR_ALLOWED:
+      {
+        read_bool (text, text_len,
+                   &parser->current_monitor_config->allow_vrr,
+                   error);
+        return;
+      }
+
     case STATE_MONITOR_MAXBPC:
       {
         int signed_max_bpc;
@@ -1527,6 +1555,8 @@ append_monitors (GString *buffer,
       g_string_append (buffer, "        </mode>\n");
       if (monitor_config->enable_underscanning)
         g_string_append (buffer, "        <underscanning>yes</underscanning>\n");
+      if (monitor_config->allow_vrr)
+        g_string_append (buffer, "        <vrr-allowed>yes</vrr-allowed>\n");
 
       if (monitor_config->has_max_bpc)
         {

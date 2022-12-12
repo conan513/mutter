@@ -51,6 +51,7 @@ enum
 {
   REPAINT_SCHEDULED,
   SIZE_CHANGED,
+  FROZEN,
 
   LAST_SIGNAL,
 };
@@ -269,6 +270,13 @@ meta_surface_actor_class_init (MetaSurfaceActorClass *klass)
                                         0,
                                         NULL, NULL, NULL,
                                         G_TYPE_NONE, 0);
+
+  signals[FROZEN] = g_signal_new ("frozen",
+                                  G_TYPE_FROM_CLASS (object_class),
+                                  G_SIGNAL_RUN_LAST,
+                                  0,
+                                  NULL, NULL, NULL,
+                                  G_TYPE_NONE, 0);
 }
 
 gboolean
@@ -513,6 +521,22 @@ meta_surface_actor_is_obscured_on_stage_view (MetaSurfaceActor *self,
                                                       stage_view);
 }
 
+gboolean
+meta_surface_actor_contains_rect (MetaSurfaceActor *surface_actor,
+                                  MetaRectangle    *rect)
+{
+  ClutterActor *actor = CLUTTER_ACTOR (surface_actor);
+  graphene_rect_t bounding_rect;
+  graphene_rect_t bound_rect;
+
+  clutter_actor_get_transformed_extents (actor, &bounding_rect);
+
+  _clutter_util_rect_from_rectangle (rect, &bound_rect);
+
+  return graphene_rect_contains_rect (&bounding_rect,
+                                      &bound_rect);
+}
+
 void
 meta_surface_actor_set_input_region (MetaSurfaceActor *self,
                                      cairo_region_t   *region)
@@ -593,6 +617,9 @@ meta_surface_actor_set_frozen (MetaSurfaceActor *self,
     return;
 
   priv->frozen = frozen;
+
+  if (frozen)
+    g_signal_emit (self, signals[FROZEN], 0);
 
   if (!frozen && priv->pending_damage)
     {

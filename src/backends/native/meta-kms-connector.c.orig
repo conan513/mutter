@@ -322,10 +322,6 @@ state_set_properties (MetaKmsConnectorState *state,
   if (prop->prop_id)
     set_privacy_screen (state, connector, prop);
 
-  prop = &props[META_KMS_CONNECTOR_PROP_VRR_CAPABLE];
-  if (prop->prop_id)
-    state->vrr_capable = prop->value;
-
   prop = &props[META_KMS_CONNECTOR_PROP_MAX_BPC];
   if (prop->prop_id)
     {
@@ -552,7 +548,6 @@ meta_kms_connector_state_new (void)
   state = g_new0 (MetaKmsConnectorState, 1);
   state->suggested_x = -1;
   state->suggested_y = -1;
-  state->vrr_capable = FALSE;
 
   return state;
 }
@@ -647,13 +642,10 @@ meta_kms_connector_state_changes (MetaKmsConnectorState *state,
 
   if (!kms_modes_equal (state->modes, new_state->modes))
     return META_KMS_RESOURCE_CHANGE_FULL;
-  
+
   if (state->max_bpc.value != new_state->max_bpc.value ||
       state->max_bpc.min_value != new_state->max_bpc.min_value ||
       state->max_bpc.max_value != new_state->max_bpc.max_value)
-    return META_KMS_RESOURCE_CHANGE_FULL;
-
-  if (state->vrr_capable != new_state->vrr_capable)
     return META_KMS_RESOURCE_CHANGE_FULL;
 
   if (state->privacy_screen_state != new_state->privacy_screen_state)
@@ -968,11 +960,6 @@ init_properties (MetaKmsConnector  *connector,
       [META_KMS_CONNECTOR_PROP_NON_DESKTOP] =
         {
           .name = "non-desktop",
-          .type = DRM_MODE_PROP_RANGE,
-        },
-      [META_KMS_CONNECTOR_PROP_VRR_CAPABLE] =
-        {
-          .name = "vrr_capable",
           .type = DRM_MODE_PROP_RANGE,
         },
       [META_KMS_CONNECTOR_PROP_MAX_BPC] =

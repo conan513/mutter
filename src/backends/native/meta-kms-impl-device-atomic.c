@@ -286,6 +286,39 @@ add_crtc_property (MetaKmsImplDevice  *impl_device,
 }
 
 static gboolean
+process_crtc_update (MetaKmsImplDevice  *impl_device,
+                     MetaKmsUpdate      *update,
+                     drmModeAtomicReq   *req,
+                     GArray             *blob_ids,
+                     gpointer            update_entry,
+                     gpointer            user_data,
+                     GError            **error)
+{
+  MetaKmsCrtcUpdate *crtc_update = update_entry;
+  MetaKmsCrtc *crtc = crtc_update->crtc;
+
+  if (crtc_update->vrr_mode.has_update)
+    {
+      meta_topic (META_DEBUG_KMS,
+                  "[atomic] Setting VRR mode to %d on CRTC %u (%s)",
+                  crtc_update->vrr_mode.is_enabled ?
+                    META_KMS_CRTC_VRR_MODE_ENABLED :
+                    META_KMS_CRTC_VRR_MODE_DISABLED,
+                  meta_kms_crtc_get_id (crtc),
+                  meta_kms_impl_device_get_path (impl_device));
+
+      if (!add_crtc_property (impl_device,
+                              crtc, req,
+                              META_KMS_CRTC_PROP_VRR_ENABLED,
+                              crtc_update->vrr_mode.is_enabled,
+                              error))
+        return FALSE;
+    }
+
+  return TRUE;
+}
+
+static gboolean
 process_mode_set (MetaKmsImplDevice  *impl_device,
                   MetaKmsUpdate      *update,
                   drmModeAtomicReq   *req,
@@ -975,6 +1008,16 @@ meta_kms_impl_device_atomic_process_update (MetaKmsImplDevice *impl_device,
                         update,
                         req,
                         blob_ids,
+                        meta_kms_update_get_crtc_updates (update),
+                        NULL,
+                        process_crtc_update,
+                        &error))
+    goto err;
+
+  if (!process_entries (impl_device,
+                        update,
+                        req,
+                        blob_ids,
                         meta_kms_update_get_mode_sets (update),
                         NULL,
                         process_mode_set,
@@ -1001,7 +1044,7 @@ meta_kms_impl_device_atomic_process_update (MetaKmsImplDevice *impl_device,
                         &error))
     goto err;
 
-  if (meta_kms_update_get_mode_sets (update))
+  if (meta_kms_update_needs_allow_modeset (update))
     commit_flags |= DRM_MODE_ATOMIC_ALLOW_MODESET;
   else
     commit_flags |= DRM_MODE_ATOMIC_NONBLOCK;
@@ -1216,6 +1259,7 @@ is_atomic_allowed (const char *driver_name)
     "vboxvideo",
     "virtio_gpu",
     "xlnx",
+    "tegra",
     NULL,
   };
 

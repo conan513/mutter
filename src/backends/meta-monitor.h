@@ -120,6 +120,10 @@ gboolean meta_monitor_supports_color_transform (MetaMonitor *monitor);
 
 gboolean meta_monitor_is_underscanning (MetaMonitor *monitor);
 
+gboolean meta_monitor_is_vrr_capable (MetaMonitor *monitor);
+
+gboolean meta_monitor_is_vrr_allowed (MetaMonitor *monitor);
+
 gboolean meta_monitor_get_max_bpc (MetaMonitor  *monitor,
                                    unsigned int *max_bpc);
 

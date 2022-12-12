@@ -45,6 +45,9 @@ meta_compositor_native_before_paint (MetaCompositor     *compositor,
                                                     compositor);
 #endif
 
+  meta_compositor_view_native_maybe_set_frame_sync (compositor_view_native,
+                                                    compositor);
+
   parent_class = META_COMPOSITOR_CLASS (meta_compositor_native_parent_class);
   parent_class->before_paint (compositor, compositor_view);
 }

@@ -393,6 +393,9 @@ meta_check_monitor_configuration (MetaContext           *context,
           g_assert_cmpint (expect->monitors[i].is_underscanning,
                            ==,
                            meta_output_is_underscanning (output));
+          g_assert_cmpint (expect->monitors[i].is_vrr_allowed,
+                           ==,
+                           meta_output_is_vrr_allowed (output));
 
           if (!meta_output_get_max_bpc (output, &output_max_bpc))
             output_max_bpc = 0;
@@ -795,6 +798,7 @@ meta_create_monitor_test_setup (MetaBackend          *backend,
 
           output_assignment = (MetaOutputAssignment) {
             .is_underscanning = setup->outputs[i].is_underscanning,
+            .is_vrr_allowed = setup->outputs[i].is_vrr_allowed,
             .has_max_bpc = !!setup->outputs[i].max_bpc,
             .max_bpc = setup->outputs[i].max_bpc,
           };

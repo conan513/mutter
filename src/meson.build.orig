@@ -797,8 +797,6 @@ if have_native_backend
     'backends/native/meta-renderer-native-private.h',
     'backends/native/meta-renderer-native.c',
     'backends/native/meta-renderer-native.h',
-    'backends/native/meta-renderer-view-native.c',
-    'backends/native/meta-renderer-view-native.h',
     'backends/native/meta-seat-impl.c',
     'backends/native/meta-seat-impl.h',
     'backends/native/meta-seat-native.c',
@@ -1091,7 +1089,6 @@ libmutter = shared_library(libmutter_name,
 libmutter_dep = declare_dependency(
   link_with: libmutter,
   include_directories: mutter_includes,
-  sources: mutter_built_sources,
   dependencies: [
     libmutter_cogl_dep,
     libmutter_clutter_dep,

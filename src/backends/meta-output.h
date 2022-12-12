@@ -114,6 +114,8 @@ typedef struct _MetaOutputInfo
   gboolean supports_underscanning;
   gboolean supports_color_transform;
 
+  gboolean vrr_capable;
+  
   unsigned int max_bpc_min;
   unsigned int max_bpc_max;
 
@@ -191,6 +193,11 @@ gboolean meta_output_is_presentation (MetaOutput *output);
 
 META_EXPORT_TEST
 gboolean meta_output_is_underscanning (MetaOutput *output);
+
+gboolean meta_output_is_vrr_capable (MetaOutput *output);
+
+META_EXPORT_TEST
+gboolean meta_output_is_vrr_allowed (MetaOutput *output);
 
 META_EXPORT_TEST
 gboolean meta_output_get_max_bpc (MetaOutput   *output,

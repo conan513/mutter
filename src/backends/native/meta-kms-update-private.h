@@ -89,6 +89,16 @@ typedef struct _MetaKmsConnectorUpdate
   } max_bpc;
 } MetaKmsConnectorUpdate;
 
+typedef struct _MetaKmsCrtcUpdate
+{
+  MetaKmsCrtc *crtc;
+
+  struct {
+    gboolean has_update;
+    gboolean is_enabled;
+  } vrr_mode;
+} MetaKmsCrtcUpdate;
+
 typedef struct _MetaKmsPageFlipListener
 {
   MetaKmsCrtc *crtc;
@@ -163,7 +173,13 @@ META_EXPORT_TEST
 GList * meta_kms_update_get_connector_updates (MetaKmsUpdate *update);
 
 META_EXPORT_TEST
+GList * meta_kms_update_get_crtc_updates (MetaKmsUpdate *update);
+
+META_EXPORT_TEST
 GList * meta_kms_update_get_crtc_gammas (MetaKmsUpdate *update);
+
+META_EXPORT_TEST
+gboolean meta_kms_update_needs_allow_modeset (MetaKmsUpdate *update);
 
 MetaKmsCustomPageFlip * meta_kms_update_take_custom_page_flip_func (MetaKmsUpdate *update);
 

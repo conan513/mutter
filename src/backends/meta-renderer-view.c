@@ -33,6 +33,7 @@
 #include "backends/meta-renderer-view.h"
 
 #include "backends/meta-crtc.h"
+#include "backends/meta-output.h"
 #include "backends/meta-renderer.h"
 #include "clutter/clutter-mutter.h"
 #include "compositor/region-utils.h"
@@ -43,34 +44,49 @@ enum
 
   PROP_TRANSFORM,
   PROP_CRTC,
+  PROP_OUTPUT,
 
   PROP_LAST
 };
 
 static GParamSpec *obj_props[PROP_LAST];
 
-struct _MetaRendererView
+typedef struct _MetaRendererViewPrivate
 {
-  MetaStageView parent;
-
   MetaMonitorTransform transform;
 
   MetaCrtc *crtc;
-};
+  MetaOutput *output;
+} MetaRendererViewPrivate;
 
-G_DEFINE_TYPE (MetaRendererView, meta_renderer_view,
-               META_TYPE_STAGE_VIEW)
+G_DEFINE_TYPE_WITH_PRIVATE (MetaRendererView, meta_renderer_view,
+                            META_TYPE_STAGE_VIEW)
 
 MetaMonitorTransform
 meta_renderer_view_get_transform (MetaRendererView *view)
 {
-  return view->transform;
+  MetaRendererViewPrivate *priv =
+    meta_renderer_view_get_instance_private (view);
+
+  return priv->transform;
 }
 
 MetaCrtc *
 meta_renderer_view_get_crtc (MetaRendererView *view)
 {
-  return view->crtc;
+  MetaRendererViewPrivate *priv =
+    meta_renderer_view_get_instance_private (view);
+
+  return priv->crtc;
+}
+
+MetaOutput *
+meta_renderer_view_get_output (MetaRendererView *view)
+{
+  MetaRendererViewPrivate *priv =
+    meta_renderer_view_get_instance_private (view);
+
+  return priv->output;
 }
 
 static void
@@ -78,10 +94,12 @@ meta_renderer_view_get_offscreen_transformation_matrix (ClutterStageView  *view,
                                                         graphene_matrix_t *matrix)
 {
   MetaRendererView *renderer_view = META_RENDERER_VIEW (view);
+  MetaRendererViewPrivate *priv =
+    meta_renderer_view_get_instance_private (renderer_view);
 
   graphene_matrix_init_identity (matrix);
   meta_monitor_transform_transform_matrix (
-    meta_monitor_transform_invert (renderer_view->transform), matrix);
+    meta_monitor_transform_invert (priv->transform), matrix);
 }
 
 static void
@@ -102,9 +120,11 @@ meta_renderer_view_transform_rect_to_onscreen (ClutterStageView            *view
                                                cairo_rectangle_int_t       *dst_rect)
 {
   MetaRendererView *renderer_view = META_RENDERER_VIEW (view);
-
+  MetaRendererViewPrivate *priv =
+    meta_renderer_view_get_instance_private (renderer_view);
+  
   return meta_rectangle_transform (src_rect,
-                                   renderer_view->transform,
+                                   priv->transform,
                                    dst_width,
                                    dst_height,
                                    dst_rect);
@@ -114,10 +134,13 @@ static void
 meta_renderer_view_set_transform (MetaRendererView     *view,
                                   MetaMonitorTransform  transform)
 {
-  if (view->transform == transform)
+  MetaRendererViewPrivate *priv =
+    meta_renderer_view_get_instance_private (view);
+
+  if (priv->transform == transform)
     return;
 
-  view->transform = transform;
+  priv->transform = transform;
   clutter_stage_view_invalidate_offscreen_blit_pipeline (CLUTTER_STAGE_VIEW (view));
 }
 
@@ -128,14 +151,19 @@ meta_renderer_view_get_property (GObject    *object,
                                  GParamSpec *pspec)
 {
   MetaRendererView *view = META_RENDERER_VIEW (object);
+  MetaRendererViewPrivate *priv =
+    meta_renderer_view_get_instance_private (view);
 
   switch (prop_id)
     {
     case PROP_TRANSFORM:
-      g_value_set_uint (value, view->transform);
+      g_value_set_uint (value, priv->transform);
       break;
     case PROP_CRTC:
-      g_value_set_object (value, view->crtc);
+      g_value_set_object (value, priv->crtc);
+      break;
+    case PROP_OUTPUT:
+      g_value_set_object (value, priv->output);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -150,6 +178,8 @@ meta_renderer_view_set_property (GObject      *object,
                                  GParamSpec   *pspec)
 {
   MetaRendererView *view = META_RENDERER_VIEW (object);
+  MetaRendererViewPrivate *priv =
+    meta_renderer_view_get_instance_private (view);
 
   switch (prop_id)
     {
@@ -157,7 +187,10 @@ meta_renderer_view_set_property (GObject      *object,
       meta_renderer_view_set_transform (view, g_value_get_uint (value));
       break;
     case PROP_CRTC:
-      view->crtc = g_value_get_object (value);
+      priv->crtc = g_value_get_object (value);
+      break;
+    case PROP_OUTPUT:
+      priv->output = g_value_get_object (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -202,6 +235,15 @@ meta_renderer_view_class_init (MetaRendererViewClass *klass)
                          "MetaCrtc",
                          "MetaCrtc",
                          META_TYPE_CRTC,
+                         G_PARAM_READWRITE |
+                         G_PARAM_CONSTRUCT_ONLY |
+                         G_PARAM_STATIC_STRINGS);
+
+  obj_props[PROP_OUTPUT] =
+    g_param_spec_object ("output",
+                         "MetaOutput",
+                         "MetaOutput",
+                         META_TYPE_OUTPUT,
                          G_PARAM_READWRITE |
                          G_PARAM_CONSTRUCT_ONLY |
                          G_PARAM_STATIC_STRINGS);

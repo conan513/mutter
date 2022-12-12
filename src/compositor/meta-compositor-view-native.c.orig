@@ -31,10 +31,6 @@
 #include "compositor/compositor-private.h"
 #include "compositor/meta-window-actor-private.h"
 
-#include "backends/native/meta-renderer-view-native.h"
-#include "clutter/clutter.h"
-#include "core/window-private.h"
-
 #ifdef HAVE_WAYLAND
 #include "compositor/meta-surface-actor-wayland.h"
 #include "wayland/meta-wayland-surface.h"
@@ -209,75 +205,6 @@ meta_compositor_view_native_maybe_assign_scanout (MetaCompositorViewNative *view
   update_scanout_candidate (view_native, surface, crtc);
 }
 #endif /* HAVE_WAYLAND */
-
-static ClutterActor *
-find_frame_sync_actor (MetaCompositorView *compositor_view,
-                       MetaCompositor     *compositor)
-{
-  MetaWindowActor *window_actor;
-  MetaWindow *window;
-  ClutterStageView *stage_view;
-  MetaRectangle view_layout;
-  MetaSurfaceActor *surface_actor;
-
-  if (meta_compositor_is_unredirect_inhibited (compositor))
-    return NULL;
-
-  window_actor =
-    meta_compositor_view_get_top_window_actor (compositor_view);
-  if (!window_actor)
-    return NULL;
-
-  if (meta_window_actor_is_frozen (window_actor))
-    return NULL;
-
-  if (meta_window_actor_effect_in_progress (window_actor))
-    return NULL;
-
-  if (clutter_actor_has_transitions (CLUTTER_ACTOR (window_actor)))
-    return NULL;
-
-  window = meta_window_actor_get_meta_window (window_actor);
-  if (!window)
-    return NULL;
-
-  stage_view = meta_compositor_view_get_stage_view (compositor_view);
-
-  clutter_stage_view_get_layout (stage_view, &view_layout);
-
-  if (!meta_window_frame_contains_rect (window, &view_layout))
-    return NULL;
-
-  surface_actor = meta_window_actor_get_scanout_candidate (window_actor);
-  if (!surface_actor)
-    return NULL;
-
-  if (!meta_surface_actor_contains_rect (surface_actor,
-                                         &view_layout))
-    return NULL;
-
-  return CLUTTER_ACTOR (surface_actor);
-}
-
-void
-meta_compositor_view_native_maybe_set_frame_sync (MetaCompositorViewNative *view_native,
-                                                  MetaCompositor           *compositor)
-{
-  MetaCompositorView *compositor_view =
-    META_COMPOSITOR_VIEW (view_native);
-  ClutterActor *frame_sync_actor;
-  MetaRendererViewNative *renderer_view_native;
-  ClutterStageView *stage_view;
-
-  frame_sync_actor = find_frame_sync_actor (compositor_view,
-                                            compositor);
-
-  stage_view = meta_compositor_view_get_stage_view (compositor_view);
-  renderer_view_native = META_RENDERER_VIEW_NATIVE (stage_view);
-
-  meta_renderer_view_native_set_frame_sync_actor (renderer_view_native,
-                                                  frame_sync_actor);
-}
 
 MetaCompositorViewNative *
 meta_compositor_view_native_new (ClutterStageView *stage_view)
